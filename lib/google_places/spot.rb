@@ -1,7 +1,7 @@
 require 'google_places/review'
 module GooglePlaces
   class Spot
-    attr_accessor :lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id, :formatted_phone_number, :international_phone_number, :formatted_address, :address_components, :street_number, :street, :city, :region, :postal_code, :country, :rating, :url, :cid, :website, :reviews, :aspects, :zagat_selected, :zagat_reviewed, :photos, :review_summary, :nextpagetoken, :price_level, :opening_hours, :events, :utc_offset, :place_id, :permanently_closed
+    attr_accessor :lat, :lng, :viewport, :name, :icon, :reference, :vicinity, :types, :id, :formatted_phone_number, :international_phone_number, :formatted_address, :address_components, :street_number, :street, :city, :region, :postal_code, :country, :rating, :url, :cid, :website, :reviews, :aspects, :zagat_selected, :zagat_reviewed, :photos, :review_summary, :nextpagetoken, :price_level, :opening_hours, :events, :utc_offset, :place_id, :html_attributions, :permanently_closed
 
     # Search for Spots at the provided location
     #
@@ -72,7 +72,6 @@ module GooglePlaces
       }
 
       options[:zagatselected] = zagat_selected if zagat_selected
-
       # Accept Types as a string or array
       if types
         types = (types.is_a?(Array) ? types.join('|') : types)
@@ -236,12 +235,6 @@ module GooglePlaces
     # @param [Hash] options
     # @option options [String] :language
     #   The language code, indicating in which language the results should be returned, if possible.
-    # @option options [String] :region
-    #   The region code, specified as a ccTLD (country code top-level domain) two-character value. Most ccTLD
-    #   codes are identical to ISO 3166-1 codes, with some exceptions. This parameter will only influence, not
-    #   fully restrict, search results. If more relevant results exist outside of the specified region, they may
-    #   be included. When this parameter is used, the country name is omitted from the resulting formatted_address
-    #   for results in the specified region.
     #
     # @option options [Hash] :retry_options ({})
     #   A Hash containing parameters for search retries
@@ -250,20 +243,19 @@ module GooglePlaces
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
     def self.find(place_id, api_key, options = {})
       language  = options.delete(:language)
-      region = options.delete(:region)
+      client = options.delete(:client) || ''
       retry_options = options.delete(:retry_options) || {}
       extensions = options.delete(:review_summary) ? 'review_summary' : nil
 
-      request_options = {
+      response = Request.spot(
         :placeid => place_id,
         :key => api_key,
         :language => language,
         :extensions => extensions,
-        :retry_options => retry_options
-      }
-      request_options[:region] = region unless region.nil?
-      response = Request.spot(request_options)
-
+        :retry_options => retry_options,
+        :client => client
+      )
+      response['result'].merge!("html_attributions" => response["html_attributions"])
       self.new(response['result'], api_key)
     end
 
@@ -313,12 +305,6 @@ module GooglePlaces
     #   Restricts the results to Spots matching at least one of the specified types
     # @option options [String] :language
     #   The language code, indicating in which language the results should be returned, if possible.
-    # @option options [String] :region
-    #   The region code, specified as a ccTLD (country code top-level domain) two-character value. Most ccTLD
-    #   codes are identical to ISO 3166-1 codes, with some exceptions. This parameter will only influence, not
-    #   fully restrict, search results. If more relevant results exist outside of the specified region, they may
-    #   be included. When this parameter is used, the country name is omitted from the resulting formatted_address
-    #   for results in the specified region.
     # @option options [String,Array<String>] :exclude ([])
     #   A String or an Array of <b>types</b> to exclude from results
     #
@@ -349,9 +335,9 @@ module GooglePlaces
       radius = options.delete(:radius) if with_radius
       rankby = options.delete(:rankby)
       language = options.delete(:language)
-      region = options.delete(:region)
       types = options.delete(:types)
       exclude = options.delete(:exclude) || []
+      client = options.delete(:client) || ''
       retry_options = options.delete(:retry_options) || {}
 
       exclude = [exclude] unless exclude.is_a?(Array)
@@ -361,12 +347,12 @@ module GooglePlaces
         :key => api_key,
         :rankby => rankby,
         :language => language,
-        :retry_options => retry_options
+        :retry_options => retry_options,
+        :client => client
       }
 
       options[:location] = location.format if with_location
       options[:radius] = radius if with_radius
-      options[:region] = region unless region.nil?
 
       # Accept Types as a string or array
       if types
@@ -398,6 +384,7 @@ module GooglePlaces
             # add next page token on the last result
             result.merge!("nextpagetoken" => response["next_page_token"])
           end
+          result.merge!("html_attributions" => response["html_attributions"])
           yield(result)
         end
 
@@ -458,6 +445,7 @@ module GooglePlaces
       @nextpagetoken              = json_result_object['nextpagetoken']
       @events                     = events_component(json_result_object['events'])
       @utc_offset                 = json_result_object['utc_offset']
+      @html_attributions          = json_result_object['html_attributions']
       @permanently_closed         = json_result_object['permanently_closed']
     end
 
@@ -484,8 +472,7 @@ module GooglePlaces
               r['author_name'],
               r['author_url'],
               r['text'],
-              r['time'].to_i,
-              r['profile_photo_url']
+              r['time'].to_i
           )
         }
       else []

@@ -104,22 +104,22 @@ describe GooglePlaces::Spot do
   context 'Multiple page request', vcr: { cassette_name: 'multiple_page_request' } do
 
     it 'should return >20 results when :multipage_request is true' do
-      @collection = GooglePlaces::Spot.list_by_query('coffee', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => true)
+      @collection = GooglePlaces::Spot.list_by_query('wolfgang', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => true)
       expect(@collection.size).to be >= 21
     end
 
     it 'should return at most 20 results when :multipage is false' do
-      @collection = GooglePlaces::Spot.list_by_query('coffee', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => false)
+      @collection = GooglePlaces::Spot.list_by_query('wolfgang', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => false)
       expect(@collection.size).to be <= 20
     end
 
     it 'should return at most 20 results when :multipage is not present' do
-      @collection = GooglePlaces::Spot.list_by_query('coffee', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius)
+      @collection = GooglePlaces::Spot.list_by_query('wolfgang', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius)
       expect(@collection.size).to be <= 20
     end
 
     it 'should return a pagetoken when there is more than 20 results and :multipage is false' do
-      @collection = GooglePlaces::Spot.list_by_query('coffee', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => false)
+      @collection = GooglePlaces::Spot.list_by_query('wolfgang', api_key, :lat => '40.808235', :lng => '-73.948733', :radius => @radius, :multipage => false)
       expect(@collection.last.nextpagetoken).to_not be_nil
     end
 
@@ -138,20 +138,6 @@ describe GooglePlaces::Spot do
 
     it 'should be a collection of Spots' do
       @collection = GooglePlaces::Spot.list_by_query('Statue of liberty, New York', api_key)
-    end
-
-    it 'should include country in formatted address' do
-      @collection = GooglePlaces::Spot.list_by_query('Statue of liberty, New York', api_key, region: 'ca')
-      @collection.each do |spot|
-        expect(spot.formatted_address).to end_with('United States')
-      end
-    end
-
-    it 'should not include country in formatted address' do
-      @collection = GooglePlaces::Spot.list_by_query('Statue of liberty, New York', api_key, region: 'us')
-      @collection.each do |spot|
-        expect(spot.formatted_address).to_not end_with('United States')
-      end
     end
 
   end
@@ -175,7 +161,7 @@ describe GooglePlaces::Spot do
     it 'should be a Spot' do
       expect(@spot.class).to eq(GooglePlaces::Spot)
     end
-    %w(reference vicinity lat lng viewport name icon types id formatted_phone_number international_phone_number formatted_address address_components street_number street city region postal_code country rating url types website price_level opening_hours events utc_offset place_id permanently_closed).each do |attribute|
+    %w(reference vicinity lat lng viewport name icon types id formatted_phone_number international_phone_number formatted_address address_components street_number street city region postal_code country rating url types website price_level opening_hours events utc_offset place_id).each do |attribute|
       it "should have the attribute: #{attribute}" do
         expect(@spot.respond_to?(attribute)).to eq(true)
       end
@@ -195,18 +181,6 @@ describe GooglePlaces::Spot do
       it "should have the review attribute: #{attribute}" do
         expect(@spot.reviews[0].respond_to?(attribute)).to eq(true)
       end
-    end
-  end
-
-  context 'Find a single spot with region parameter', vcr: { cassette_name: 'single_spot' } do
-    it 'should include country name in formatted address' do
-      @spot = GooglePlaces::Spot.find(@place_id, api_key, region: 'nz')
-      expect(@spot.formatted_address).to end_with('Australia')
-    end
-
-    it 'should not include country name in formatted address' do
-      @spot = GooglePlaces::Spot.find(@place_id, api_key, region: 'au')
-      expect(@spot.formatted_address).to_not end_with('Australia')
     end
   end
 end

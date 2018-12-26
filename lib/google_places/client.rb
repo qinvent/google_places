@@ -65,7 +65,7 @@ module GooglePlaces
     #     the number of check-ins from your application, global popularity, and other factors.
     #   - distance. This option sorts results in ascending order by their distance from the specified location.
     #     Ranking results by distance will set a fixed search radius of 50km.
-    #     One or more of keyword, name, or types is required.
+    #     One or more of keyword, name, or types is required.                                                                                                                                                                                                                                                                                       distance. This option sorts results in ascending order by their distance from the specified location. Ranking results by distance will set a fixed search radius of 50km. One or more of keyword, name, or types is required.
     # @option options [String,Array] :types
     #   Restricts the results to Spots matching at least one of the specified types
     # @option options [String] :name
@@ -86,19 +86,10 @@ module GooglePlaces
     # @option options [Integer] :retry_options[:max] (0) the maximum retries
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
     #
-    # @option options [Boolean] :detail
-    #   A boolean to return spots with full detail information(its complete address, phone number, user rating, reviews, etc)
-    #   Note) This makes an extra call for each spot for more information.
-    #
     # @see http://spreadsheets.google.com/pub?key=p9pdwsai2hDMsLkXsoM05KQ&gid=1 List of supported languages
     # @see https://developers.google.com/maps/documentation/places/supported_types List of supported types
     def spots(lat, lng, options = {})
-      options = @options.merge(options)
-      detail = options.delete(:detail)
-      collection_detail_level(
-        Spot.list(lat, lng, @api_key, options),
-        detail
-      )
+      Spot.list(lat, lng, @api_key, @options.merge(options))
     end
 
     # Search for a Spot with a reference key
@@ -151,19 +142,11 @@ module GooglePlaces
     # @option options [Object] :retry_options[:status] ([])
     # @option options [Integer] :retry_options[:max] (0) the maximum retries
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
-    # @option options [Boolean] :detail
-    #   A boolean to return spots with full detail information(its complete address, phone number, user rating, reviews, etc)
-    #   Note) This makes an extra call for each spot for more information.
     #
     # @see http://spreadsheets.google.com/pub?key=p9pdwsai2hDMsLkXsoM05KQ&gid=1 List of supported languages
     # @see https://developers.google.com/maps/documentation/places/supported_types List of supported types
     def spots_by_query(query, options = {})
-      options = @options.merge(options)
-      detail = options.delete(:detail)
-      collection_detail_level(
-        Spot.list_by_query(query, @api_key, options),
-        detail
-      )
+      Spot.list_by_query(query, @api_key, @options.merge(options))
     end
     # Search for Spots within a give SW|NE bounds with query
     #
@@ -196,18 +179,10 @@ module GooglePlaces
     # @option options [Object] :retry_options[:status] ([])
     # @option options [Integer] :retry_options[:max] (0) the maximum retries
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
-    # @option options [Boolean] :detail
-    #   A boolean to return spots with full detail information(its complete address, phone number, user rating, reviews, etc)
-    #   Note) This makes an extra call for each spot for more information.
     #
     # @see https://developers.google.com/maps/documentation/places/supported_types List of supported types
     def spots_by_bounds(bounds, options = {})
-      options = @options.merge(options)
-      detail = options.delete(:detail)
-      collection_detail_level(
-        Spot.list_by_bounds(bounds, @api_key, options),
-        detail
-      )
+      Spot.list_by_bounds(bounds, @api_key, @options.merge(options))
     end
     # Search for Spots with a pagetoken
     #
@@ -221,18 +196,10 @@ module GooglePlaces
     # @option options [Object] :retry_options[:status] ([])
     # @option options [Integer] :retry_options[:max] (0) the maximum retries
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
-    # @option options [Boolean] :detail
-    #   A boolean to return spots with full detail information(its complete address, phone number, user rating, reviews, etc)
-    #   Note) This makes an extra call for each spot for more information.
     #
     # @see https://developers.google.com/maps/documentation/places/supported_types List of supported types
     def spots_by_pagetoken(pagetoken, options = {})
-      options = @options.merge(options)
-      detail = options.delete(:detail)
-      collection_detail_level(
-        Spot.list_by_pagetoken(pagetoken, @api_key, options),
-        detail
-      )
+      Spot.list_by_pagetoken(pagetoken, @api_key, @options.merge(options))
     end
 
     # Radar Search Service allows you to search for up to 200 Places at once, but with less detail than is typically returned from a Text Search or Nearby Search request. The search response will include up to 200 Places, identified only by their geographic coordinates and reference. You can send a Place Details request for more information about any of them.
@@ -266,18 +233,10 @@ module GooglePlaces
     #   Restrict your search to only those locations that are Zagat selected businesses.
     #   This parameter does not require a true or false value, simply including the parameter in the request is sufficient to restrict your search.
     #   The zagatselected parameter is experimental, and only available to Places API enterprise customers.
-    # @option options [Boolean] :detail
-    #   A boolean to return spots with full detail information(its complete address, phone number, user rating, reviews, etc)
-    #   Note) This makes an extra call for each spot for more information.
     #
     # @see https://developers.google.com/places/documentation/search#RadarSearchRequests
     def spots_by_radar(lat, lng, options = {})
-      options = @options.merge(options)
-      detail = options.delete(:detail)
-      collection_detail_level(
-        Spot.list_by_radar(lat, lng, @api_key, options),
-        detail
-      )
+      Spot.list_by_radar(lat, lng, @api_key, @options.merge(options))
     end
 
     # Query for Place Predictions
@@ -303,16 +262,8 @@ module GooglePlaces
       Prediction.list_by_input(input, @api_key, @options.merge(options))
     end
 
-    private
-
-    def collection_detail_level(spots, detail = false)
-      if detail
-        spots.map do |spot|
-          Spot.find(spot.place_id, @api_key, @options)
-        end
-      else
-        spots
-      end
+    def query_predictions_by_input(input, options = {})
+      QueryPrediction.list_by_input(input, @api_key, @options.merge(options))
     end
   end
 end

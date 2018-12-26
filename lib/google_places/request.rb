@@ -15,6 +15,7 @@ module GooglePlaces
     PAGETOKEN_URL     = 'https://maps.googleapis.com/maps/api/place/search/json'
     RADAR_SEARCH_URL  = 'https://maps.googleapis.com/maps/api/place/radarsearch/json'
     AUTOCOMPLETE_URL  = 'https://maps.googleapis.com/maps/api/place/autocomplete/json'
+    QUERY_AUTOCOMPLETE_URL  = 'https://maps.googleapis.com/maps/api/place/queryautocomplete/json'
 
     # Search for Spots at the provided location
     #
@@ -72,12 +73,6 @@ module GooglePlaces
     #   <b>Note that this is a mandatory parameter</b>
     # @option options [String] :language
     #   The language code, indicating in which language the results should be returned, if possible.
-    # @option options [String] :region
-    #   The region code, specified as a ccTLD (country code top-level domain) two-character value. Most ccTLD
-    #   codes are identical to ISO 3166-1 codes, with some exceptions. This parameter will only influence, not
-    #   fully restrict, search results. If more relevant results exist outside of the specified region, they may
-    #   be included. When this parameter is used, the country name is omitted from the resulting formatted_address
-    #   for results in the specified region.
     #
     # @option options [Hash] :retry_options ({})
     #   A Hash containing parameters for search retries
@@ -187,12 +182,6 @@ module GooglePlaces
     #   Restricts the results to Spots matching at least one of the specified types
     # @option options [String] :language
     #   The language code, indicating in which language the results should be returned, if possible.
-    # @option options [String] :region
-    #   The region code, specified as a ccTLD (country code top-level domain) two-character value. Most ccTLD
-    #   codes are identical to ISO 3166-1 codes, with some exceptions. This parameter will only influence, not
-    #   fully restrict, search results. If more relevant results exist outside of the specified region, they may
-    #   be included. When this parameter is used, the country name is omitted from the resulting formatted_address
-    #   for results in the specified region.
     # @option options [String,Array<String>] :exclude ([])
     #   A String or an Array of <b>types</b> to exclude from results
     #
@@ -247,6 +236,27 @@ module GooglePlaces
       request = new(AUTOCOMPLETE_URL, options)
       request.parsed_response
     end
+
+
+    # Query for Query Place Predictions
+    #
+    # @return [Array<Prediction>]
+    # @param [String] api_key the provided api key
+    # @param [Hash] options
+    # @option options [String,Array<String>] :exclude ([])
+    #   A String or an Array of <b>types</b> to exclude from results
+    # @option options [Hash] :retry_options ({})
+    #   A Hash containing parameters for search retries
+    # @option options [Object] :retry_options[:status] ([])
+    # @option options [Integer] :retry_options[:max] (0) the maximum retries
+    # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
+    #
+    # @see https://developers.google.com/maps/documentation/places/supported_types List of supported types
+    def self.query_predictions_by_input(options = {})
+      request = new(QUERY_AUTOCOMPLETE_URL, options)
+      request.parsed_response
+    end
+
 
     # Search for a Photo's URL with a reference key
     #
@@ -317,9 +327,9 @@ module GooglePlaces
       retry_options[:delay]  ||= 5
       retry_options[:status] = [retry_options[:status]] unless retry_options[:status].is_a?(Array)
       @response = self.class.get(url, :query => options, :follow_redirects => follow_redirects)
-
-      # puts @response.request.last_uri.to_s
-
+        #puts options.to_s
+        #puts @response.request.last_uri.to_s
+        #puts @response.inspect
       return unless retry_options[:max] > 0 && retry_options[:status].include?(@response.parsed_response['status'])
 
       retry_request = proc do
@@ -359,8 +369,7 @@ module GooglePlaces
     # @raise [NotFoundError] when server response object includes 'NOT_FOUND'
     # @return [String] the response from the server as JSON
     def parsed_response
-      return @response.headers["location"] if @response.code >= 300 && @response.code < 400
-      raise APIConnectionError.new(@response) if @response.code >= 500 && @response.code < 600
+      return @response.headers["location"] if @response.code >= 300 and @response.code < 400
       case @response.parsed_response['status']
       when 'OK', 'ZERO_RESULTS'
         @response.parsed_response
@@ -376,5 +385,6 @@ module GooglePlaces
         raise NotFoundError.new(@response)
       end
     end
+
   end
 end

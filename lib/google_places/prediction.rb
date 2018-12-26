@@ -5,9 +5,7 @@ module GooglePlaces
       :description,
       :place_id,
       :terms,
-      :types,
-      :matched_substrings,
-      :structured_formatting
+      :types
     )
 
     def initialize(json_result_object)
@@ -15,8 +13,6 @@ module GooglePlaces
       @place_id = json_result_object['place_id']
       @terms = json_result_object['terms']
       @types = json_result_object['types']
-      @matched_substrings = json_result_object['matched_substrings']
-      @structured_formatting = json_result_object['structured_formatting']
     end
 
     # Query for Predictions (optionally at the provided location)

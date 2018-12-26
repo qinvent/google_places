@@ -21,18 +21,22 @@ module GooglePlaces
     # @option options [Integer] :retry_options[:max] (0) the maximum retries
     # @option options [Integer] :retry_options[:delay] (5) the delay between each retry in seconds
     def fetch_url(maxwidth, options = {})
-      language  = options.delete(:language)
-      retry_options = options.delete(:retry_options) || {}
+      begin
+        language  = options.delete(:language)
+        retry_options = options.delete(:retry_options) || {}
 
-      unless @fetched_url
-        @fetched_url = Request.photo_url(
-          :maxwidth => maxwidth,
-          :photoreference => @photo_reference,
-          :key => @api_key,
-          :retry_options => retry_options
-        )
+        unless @fetched_url
+          @fetched_url = Request.photo_url(
+            :maxwidth => maxwidth,
+            :photoreference => @photo_reference,
+            :key => @api_key,
+            :retry_options => retry_options
+          )
+        end
+        @fetched_url
+      rescue Exception => e
+        @fetched_url
       end
-      @fetched_url
     end
   end
 end
